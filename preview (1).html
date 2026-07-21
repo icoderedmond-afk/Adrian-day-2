@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Dash Trivia Vault</title>
+    <style>
+        :root {
+            --gd-blue: #0088ff;
+            --gd-yellow: #ffcc00;
+            --gd-bg: #111111;
+            --gd-panel: #1a1a24;
+            --gd-correct: #00ff00;
+            --gd-wrong: #ff0044;
+        }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: var(--gd-bg);
+            background-image: linear-gradient(45deg, #0a0a0a 25%, #151515 25%, #151515 50%, #0a0a0a 50%, #0a0a0a 75%, #151515 75%, #151515 100%);
+            background-size: 60px 60px;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        #quiz-container {
+            background-color: var(--gd-panel);
+            border: 4px solid var(--gd-blue);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 136, 255, 0.3), inset 0 0 10px rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+        h1 {
+            color: var(--gd-yellow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 3px 3px 0px #000;
+            margin-top: 0;
+            font-size: 2.2rem;
+        }
+        #score-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #aaa;
+            background: rgba(0,0,0,0.5);
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid #333;
+        }
+        #question {
+            font-size: 1.4rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+            min-height: 60px;
+            text-shadow: 1px 1px 2px #000;
+        }
+        #options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 600px) {
+            #options-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .btn {
+            background-color: #2a2a35;
+            color: white;
+            border: 2px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 4px 0px #111;
+        }
+        .btn:hover:not(:disabled) {
+            border-color: var(--gd-yellow);
+            background-color: #3a3a45;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0px #111;
+        }
+        .btn:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0px #111;
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+        .correct {
+            background-color: #00aa00 !important;
+            border-color: var(--gd-correct) !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4), 0 4px 0px #005500 !important;
+        }
+        .wrong {
+            background-color: #aa0000 !important;
+            border-color: var(--gd-wrong) !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(255, 0, 68, 0.4), 0 4px 0px #550000 !important;
+        }
+        #next-btn, #restart-btn {
+            background-color: var(--gd-blue);
+            color: white;
+            border: 2px solid #00aaff;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: none;
+            margin: 0 auto;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: 0.2s;
+            box-shadow: 0 4px 0px #004488;
+        }
+        #next-btn:hover, #restart-btn:hover {
+            background-color: #00aaff;
+            box-shadow: 0 0 20px rgba(0, 170, 255, 0.6), 0 4px 0px #004488;
+            transform: translateY(-2px);
+        }
+        #next-btn:active, #restart-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0px #004488;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #222;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--gd-yellow);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="quiz-container">
+        <h1>Geometry Dash Trivia</h1>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+        <div id="score-display">Score: 0 / 0</div>
+        
+        <h2 id="question">Loading Geometry Dash Data...</h2>
+        <div id="options-container"></div>
+        
+        <button id="next-btn" onclick="nextQuestion()">Next Level</button>
+        <button id="restart-btn" onclick="initGame()">Play Again</button>
+    </div>
+
+    <script>
+        const questionPool = [{"q": "What is the first official level in Geometry Dash?", "a": "Stereo Madness", "opts": ["Stereo Madness", "Back on Track", "Polargeist", "Base After Base"]}, {"q": "Which update added the Wave gamemode?", "a": "1.9", "opts": ["1.9", "1.8", "2.0", "1.7"]}, {"q": "Who verified the legendary Extreme Demon 'Bloodbath'?", "a": "Riot", "opts": ["Riot", "Sunix", "Npesta", "GuitarHeroStyles"]}, {"q": "What level introduced the Robot gamemode?", "a": "Geometrical Dominator", "opts": ["Geometrical Dominator", "Deadlocked", "Fingerdash", "Blast Processing"]}, {"q": "What color is the gravity-flipping orb?", "a": "Blue", "opts": ["Blue", "Yellow", "Green", "Pink"]}, {"q": "How many official levels are there in GD as of Update 2.2?", "a": "22", "opts": ["22", "21", "20", "23"]}, {"q": "Which level by Zobros popularized the 'Nine Circles' trend?", "a": "Nine Circles", "opts": ["Nine Circles", "Fairydust", "Jawbreaker", "Sonic Wave"]}, {"q": "Who created the mind-bending level 'HOW'?", "a": "Spu7nix", "opts": ["Spu7nix", "Serponge", "FunnyGame", "KrmaL"]}, {"q": "What is the highest difficulty rating for a Demon level?", "a": "Extreme Demon", "opts": ["Extreme Demon", "Insane Demon", "Supreme Demon", "Legendary Demon"]}, {"q": "Which update introduced the Spider gamemode?", "a": "2.1", "opts": ["2.1", "2.0", "2.2", "1.9"]}, {"q": "What is the maximum number of stars you can earn from a single level?", "a": "10", "opts": ["10", "15", "5", "12"]}, {"q": "Which Extreme Demon features a famous randomized key sequence at the end?", "a": "Limbo", "opts": ["Limbo", "Slaughterhouse", "Zodiac", "Firework"]}, {"q": "What color portal changes the gamemode to the Ship?", "a": "Pink", "opts": ["Pink", "Green", "Blue", "Orange"]}, {"q": "Who is the sole developer of Geometry Dash?", "a": "Robert Topala (RobTop)", "opts": ["Robert Topala (RobTop)", "Markus Persson", "Scott Cawthon", "Toby Fox"]}, {"q": "Which level was the first official Demon?", "a": "Clubstep", "opts": ["Clubstep", "Theory of Everything 2", "Deadlocked", "Electrodynamix"]}, {"q": "What does the green orb do?", "a": "Flips gravity while jumping", "opts": ["Flips gravity while jumping", "Drops you down instantly", "Teleports you forward", "Changes your size"]}, {"q": "Which player verified Sonic Wave?", "a": "Sunix", "opts": ["Sunix", "Riot", "Mefewe", "Technical"]}, {"q": "What was the first official level to feature the Swing gamemode?", "a": "Dash", "opts": ["Dash", "Fingerdash", "Electrodynamix", "Hexagon Force"]}, {"q": "Which color is the UFO portal?", "a": "Orange", "opts": ["Orange", "Green", "Pink", "Blue"]}, {"q": "Which gauntlet features the level 'Magmatic Sanctuary'?", "a": "Fire Gauntlet", "opts": ["Fire Gauntlet", "Lava Gauntlet", "Demon Gauntlet", "Chaos Gauntlet"]}, {"q": "Who verified 'Tidal Wave', a legendary modern #1 Demon?", "a": "Zoink", "opts": ["Zoink", "Trick", "SpaceUK", "Doggie"]}, {"q": "How many secret coins are required to unlock Clubstep?", "a": "10", "opts": ["10", "20", "30", "15"]}, {"q": "Which of these is NOT an official Geometry Dash spin-off game?", "a": "Geometry Dash Adventure", "opts": ["Geometry Dash Adventure", "Geometry Dash Meltdown", "Geometry Dash SubZero", "Geometry Dash World"]}, {"q": "What is the first level in the Demon Gauntlet?", "a": "Sidestep", "opts": ["Sidestep", "Traction", "Mechanical Showdown", "Vibration"]}, {"q": "Which creator is famous for their 'Kenos' verification reaction?", "a": "npesta", "opts": ["npesta", "Technical", "Riot", "AeonAir"]}, {"q": "What color is the dual portal?", "a": "Orange", "opts": ["Orange", "Blue", "Green", "Pink"]}, {"q": "Which level introduced the size-changing portal (mini portal)?", "a": "Dry Out", "opts": ["Dry Out", "Base After Base", "Jumper", "Can't Let Go"]}, {"q": "In what year was Geometry Dash released?", "a": "2013", "opts": ["2013", "2012", "2014", "2015"]}, {"q": "Which iconic impossible level was verified by Paqoe in 2022?", "a": "Silent Clubstep", "opts": ["Silent Clubstep", "Death Corridor", "Acheron", "Tartarus"]}, {"q": "What is the primary color of the 4x speed portal?", "a": "Red", "opts": ["Red", "Pink", "Green", "Yellow"]}, {"q": "Which update added the level editor?", "a": "1.0", "opts": ["1.0", "1.1", "1.5", "1.2"]}, {"q": "Who is the creator of the innovative level 'Mastergame'?", "a": "Serponge", "opts": ["Serponge", "Spu7nix", "FunnyGame", "Viprin"]}, {"q": "What happens when you touch a black orb?", "a": "You drop down instantly", "opts": ["You drop down instantly", "You jump extremely high", "Your gravity flips", "You teleport"]}, {"q": "How many Mana Orbs does an officially rated Demon level typically yield upon completion?", "a": "500", "opts": ["500", "250", "1000", "400"]}, {"q": "Which official level introduced the green orb?", "a": "Hexagon Force", "opts": ["Hexagon Force", "Electrodynamix", "Blast Processing", "Theory of Everything 2"]}, {"q": "Which of these levels is widely considered the first Extreme Demon?", "a": "Cataclysm", "opts": ["Cataclysm", "Bloodbath", "Ice Carbon Diablo X", "Demon Park"]}, {"q": "What color is the mini portal?", "a": "Pink", "opts": ["Pink", "Purple", "Green", "Yellow"]}, {"q": "Who verified the level 'Zodiac'?", "a": "Xander556", "opts": ["Xander556", "Technical", "Mullsy", "Dolphy"]}, {"q": "Which legendary creator is known for hosting the 'Yatagarasu' megacollab?", "a": "Viprin", "opts": ["Viprin", "Zobros", "Michigun", "Riot"]}, {"q": "What is the name of the currency used to buy icons from the community shop?", "a": "Mana Orbs", "opts": ["Mana Orbs", "Diamonds", "Stars", "User Coins"]}, {"q": "Which speed portal is pink?", "a": "0.5x (Slow)", "opts": ["0.5x (Slow)", "2x (Fast)", "3x (Very Fast)", "4x (Extremely Fast)"]}, {"q": "Which game mode forces you to click to instantly teleport to the opposite surface?", "a": "Spider", "opts": ["Spider", "Robot", "Wave", "UFO"]}, {"q": "What is the maximum number of user coins a level can have?", "a": "3", "opts": ["3", "5", "10", "1"]}, {"q": "Which level introduced the dual portal?", "a": "Hexagon Force", "opts": ["Hexagon Force", "Electrodynamix", "Clutterfunk", "Blast Processing"]}, {"q": "Who composed the song for the level 'Stereo Madness'?", "a": "ForeverBound", "opts": ["ForeverBound", "Waterflame", "DJVI", "F-777"]}, {"q": "Which of the following levels is an official RobTop level?", "a": "Electroman Adventures", "opts": ["Electroman Adventures", "Decode", "Problematic", "Bloodbath"]}, {"q": "What does the red jump pad do?", "a": "Forces a very high jump", "opts": ["Forces a very high jump", "Flips gravity", "Changes game speed", "Makes the player mini"]}, {"q": "Which creator is known for the 'Travel' series (e.g., Lonely Travel)?", "a": "FunnyGame", "opts": ["FunnyGame", "Serponge", "JonathanGD", "Darwin"]}, {"q": "Who verified the extreme demon 'Firework'?", "a": "Trick", "opts": ["Trick", "SpaceUK", "Doggie", "Curses"]}, {"q": "What triggers when you collect a key in a level?", "a": "It toggles objects or moves them", "opts": ["It toggles objects or moves them", "It gives you a star", "It changes the music", "It unlocks a secret coin"]}, {"q": "What is the legendary triple spike jump often associated with?", "a": "Michigun", "opts": ["Michigun", "Riot", "Viprin", "Zobros"]}, {"q": "Which demon difficulty sits between Hard Demon and Extreme Demon?", "a": "Insane Demon", "opts": ["Insane Demon", "Medium Demon", "Crazy Demon", "Ultimate Demon"]}, {"q": "What is the ID of the first ever user-created level?", "a": "128", "opts": ["128", "1", "100", "69"]}, {"q": "Which game mode allows you to fly continuously by holding?", "a": "Ship", "opts": ["Ship", "UFO", "Wave", "Swing"]}, {"q": "What color is the 3x speed portal?", "a": "Green", "opts": ["Green", "Pink", "Red", "Yellow"]}, {"q": "Which level introduced the Teleport portal?", "a": "Theory of Everything 2", "opts": ["Theory of Everything 2", "Deadlocked", "Hexagon Force", "Electrodynamix"]}, {"q": "What is the maximum amount of objects a level can natively have in 2.1 before needing a bypass?", "a": "80,000", "opts": ["80,000", "40,000", "100,000", "20,000"]}, {"q": "What does a yellow jump pad do?", "a": "Forces a medium-height jump", "opts": ["Forces a medium-height jump", "Flips gravity", "Drops you down", "Teleports you"]}, {"q": "How many diamonds do you need to unlock the Secret Shop?", "a": "500", "opts": ["500", "1000", "200", "50"]}, {"q": "What is the name of the monster found in the basement?", "a": "The Demon Guardian", "opts": ["The Demon Guardian", "The Keymaster", "The Gatekeeper", "RubRub"]}, {"q": "Who composed the song for 'Deadlocked'?", "a": "F-777", "opts": ["F-777", "Waterflame", "DJ-Nate", "Dex Arson"]}, {"q": "Which level is known for being the first rated level to use a custom song?", "a": "Sonar", "opts": ["Sonar", "Demon Park", "Chaoz Fantasy", "Windy Landscape"]}, {"q": "Which creator made the masterpiece level 'White Space'?", "a": "Xender Game", "opts": ["Xender Game", "Knobbelboy", "Bli", "CuLuC"]}, {"q": "What happens when you hit a dash orb (green/pink arrow orb)?", "a": "You dash forward straight or diagonally", "opts": ["You dash forward straight or diagonally", "You stop completely", "You reverse direction", "You teleport to the end"]}, {"q": "Who verified 'Bloodlust', the buffed extension of Bloodbath?", "a": "Knobbelboy", "opts": ["Knobbelboy", "Crazen", "Technical", "Riot"]}, {"q": "How many default colors can you unlock for your icon?", "a": "100+", "opts": ["100+", "10", "30", "50"]}];
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function initGame() {
+            // Randomly select 20 questions for the session from the pool of ~70
+            let shuffledPool = shuffleArray([...questionPool]);
+            currentQuestions = shuffledPool.slice(0, 20);
+            
+            score = 0;
+            currentQuestionIndex = 0;
+            
+            document.getElementById('restart-btn').style.display = 'none';
+            document.getElementById('options-container').style.display = 'grid';
+            updateScore();
+            showQuestion();
+        }
+
+        function showQuestion() {
+            document.getElementById('next-btn').style.display = 'none';
+            const qContainer = document.getElementById('question');
+            const optsContainer = document.getElementById('options-container');
+            const progressBar = document.getElementById('progress');
+            
+            optsContainer.innerHTML = '';
+
+            // Update Progress Bar
+            let progressPct = (currentQuestionIndex / currentQuestions.length) * 100;
+            progressBar.style.width = progressPct + '%';
+
+            if (currentQuestionIndex >= currentQuestions.length) {
+                finishQuiz();
+                return;
+            }
+
+            const q = currentQuestions[currentQuestionIndex];
+            qContainer.innerHTML = `Q${currentQuestionIndex + 1}: ${q.q}`;
+
+            let options = shuffleArray([...q.opts]);
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.classList.add('btn');
+                btn.innerHTML = opt;
+                btn.onclick = () => selectAnswer(btn, opt, q.a);
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        function selectAnswer(btn, selected, correct) {
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(b => {
+                b.disabled = true;
+                if (b.innerHTML === correct) {
+                    b.classList.add('correct');
+                }
+            });
+
+            if (selected === correct) {
+                score++;
+            } else {
+                btn.classList.add('wrong');
+            }
+
+            updateScore();
+            
+            // Auto progress or show next button
+            if (currentQuestionIndex === currentQuestions.length - 1) {
+                document.getElementById('next-btn').innerHTML = "Finish";
+            } else {
+                document.getElementById('next-btn').innerHTML = "Next Level";
+            }
+            document.getElementById('next-btn').style.display = 'inline-block';
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            showQuestion();
+        }
+
+        function updateScore() {
+            document.getElementById('score-display').innerHTML = `Score: ${score} / ${currentQuestions.length}`;
+        }
+
+        function finishQuiz() {
+            const qContainer = document.getElementById('question');
+            const optsContainer = document.getElementById('options-container');
+            
+            document.getElementById('progress').style.width = '100%';
+            optsContainer.style.display = 'none';
+            
+            let message = "";
+            let percentage = score / currentQuestions.length;
+            if (percentage === 1) message = "DEMON SLAIN! Perfect Score!";
+            else if (percentage >= 0.8) message = "Incredible Job! You're a GD Master.";
+            else if (percentage >= 0.5) message = "Level Complete! Good effort.";
+            else message = "Crashed! Better practice in normal mode.";
+
+            qContainer.innerHTML = `Quiz Complete!<br><br><span style="color: var(--gd-yellow); font-size: 1.8rem;">${message}</span><br><br>Final Score: ${score} / ${currentQuestions.length}`;
+            
+            document.getElementById('restart-btn').style.display = 'inline-block';
+        }
+
+        // Start game on load
+        window.onload = initGame;
+    </script>
+</body>
+</html>
